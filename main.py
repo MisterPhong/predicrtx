@@ -1,10 +1,8 @@
 from concurrent import futures
 import time
-
 import grpc
 
 import predict_pb2_grpc
-
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

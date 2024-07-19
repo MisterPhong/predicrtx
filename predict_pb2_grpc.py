@@ -3,12 +3,12 @@
 import grpc
 import warnings
 
-from proto import predict_pb2 as proto_dot_predict__pb2
+import predict_pb2 as predict__pb2
 
-GRPC_GENERATED_VERSION = '1.64.1'
+GRPC_GENERATED_VERSION = '1.65.1'
 GRPC_VERSION = grpc.__version__
-EXPECTED_ERROR_RELEASE = '1.65.0'
-SCHEDULED_RELEASE_DATE = 'June 25, 2024'
+EXPECTED_ERROR_RELEASE = '1.66.0'
+SCHEDULED_RELEASE_DATE = 'August 6, 2024'
 _version_not_supported = False
 
 try:
@@ -20,7 +20,7 @@ except ImportError:
 if _version_not_supported:
     warnings.warn(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in proto/predict_pb2_grpc.py depends on'
+        + f' but the generated code in predict_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -41,28 +41,28 @@ class PredictServiceStub(object):
         """
         self.predict = channel.unary_unary(
                 '/predict.PredictService/predict',
-                request_serializer=proto_dot_predict__pb2.Empty.SerializeToString,
-                response_deserializer=proto_dot_predict__pb2.Empty.FromString,
+                request_serializer=predict__pb2.Empty.SerializeToString,
+                response_deserializer=predict__pb2.Empty.FromString,
                 _registered_method=True)
         self.deleteall = channel.unary_unary(
                 '/predict.PredictService/deleteall',
-                request_serializer=proto_dot_predict__pb2.TimeStampReq.SerializeToString,
-                response_deserializer=proto_dot_predict__pb2.Empty.FromString,
+                request_serializer=predict__pb2.TimeStampReq.SerializeToString,
+                response_deserializer=predict__pb2.Empty.FromString,
                 _registered_method=True)
         self.update = channel.unary_unary(
                 '/predict.PredictService/update',
-                request_serializer=proto_dot_predict__pb2.TimeStampReq.SerializeToString,
-                response_deserializer=proto_dot_predict__pb2.Empty.FromString,
+                request_serializer=predict__pb2.TimeStampReq.SerializeToString,
+                response_deserializer=predict__pb2.Empty.FromString,
                 _registered_method=True)
         self.plot = channel.unary_unary(
                 '/predict.PredictService/plot',
-                request_serializer=proto_dot_predict__pb2.Empty.SerializeToString,
-                response_deserializer=proto_dot_predict__pb2.PredictResponse.FromString,
+                request_serializer=predict__pb2.Empty.SerializeToString,
+                response_deserializer=predict__pb2.PredictResponse.FromString,
                 _registered_method=True)
         self.getData = channel.unary_unary(
                 '/predict.PredictService/getData',
-                request_serializer=proto_dot_predict__pb2.TimeStampReq.SerializeToString,
-                response_deserializer=proto_dot_predict__pb2.PredictResponse.FromString,
+                request_serializer=predict__pb2.TimeStampReq.SerializeToString,
+                response_deserializer=predict__pb2.PredictResponse.FromString,
                 _registered_method=True)
 
 
@@ -104,28 +104,28 @@ def add_PredictServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'predict': grpc.unary_unary_rpc_method_handler(
                     servicer.predict,
-                    request_deserializer=proto_dot_predict__pb2.Empty.FromString,
-                    response_serializer=proto_dot_predict__pb2.Empty.SerializeToString,
+                    request_deserializer=predict__pb2.Empty.FromString,
+                    response_serializer=predict__pb2.Empty.SerializeToString,
             ),
             'deleteall': grpc.unary_unary_rpc_method_handler(
                     servicer.deleteall,
-                    request_deserializer=proto_dot_predict__pb2.TimeStampReq.FromString,
-                    response_serializer=proto_dot_predict__pb2.Empty.SerializeToString,
+                    request_deserializer=predict__pb2.TimeStampReq.FromString,
+                    response_serializer=predict__pb2.Empty.SerializeToString,
             ),
             'update': grpc.unary_unary_rpc_method_handler(
                     servicer.update,
-                    request_deserializer=proto_dot_predict__pb2.TimeStampReq.FromString,
-                    response_serializer=proto_dot_predict__pb2.Empty.SerializeToString,
+                    request_deserializer=predict__pb2.TimeStampReq.FromString,
+                    response_serializer=predict__pb2.Empty.SerializeToString,
             ),
             'plot': grpc.unary_unary_rpc_method_handler(
                     servicer.plot,
-                    request_deserializer=proto_dot_predict__pb2.Empty.FromString,
-                    response_serializer=proto_dot_predict__pb2.PredictResponse.SerializeToString,
+                    request_deserializer=predict__pb2.Empty.FromString,
+                    response_serializer=predict__pb2.PredictResponse.SerializeToString,
             ),
             'getData': grpc.unary_unary_rpc_method_handler(
                     servicer.getData,
-                    request_deserializer=proto_dot_predict__pb2.TimeStampReq.FromString,
-                    response_serializer=proto_dot_predict__pb2.PredictResponse.SerializeToString,
+                    request_deserializer=predict__pb2.TimeStampReq.FromString,
+                    response_serializer=predict__pb2.PredictResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -153,8 +153,8 @@ class PredictService(object):
             request,
             target,
             '/predict.PredictService/predict',
-            proto_dot_predict__pb2.Empty.SerializeToString,
-            proto_dot_predict__pb2.Empty.FromString,
+            predict__pb2.Empty.SerializeToString,
+            predict__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,
@@ -180,8 +180,8 @@ class PredictService(object):
             request,
             target,
             '/predict.PredictService/deleteall',
-            proto_dot_predict__pb2.TimeStampReq.SerializeToString,
-            proto_dot_predict__pb2.Empty.FromString,
+            predict__pb2.TimeStampReq.SerializeToString,
+            predict__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,
@@ -207,8 +207,8 @@ class PredictService(object):
             request,
             target,
             '/predict.PredictService/update',
-            proto_dot_predict__pb2.TimeStampReq.SerializeToString,
-            proto_dot_predict__pb2.Empty.FromString,
+            predict__pb2.TimeStampReq.SerializeToString,
+            predict__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,
@@ -234,8 +234,8 @@ class PredictService(object):
             request,
             target,
             '/predict.PredictService/plot',
-            proto_dot_predict__pb2.Empty.SerializeToString,
-            proto_dot_predict__pb2.PredictResponse.FromString,
+            predict__pb2.Empty.SerializeToString,
+            predict__pb2.PredictResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -261,8 +261,8 @@ class PredictService(object):
             request,
             target,
             '/predict.PredictService/getData',
-            proto_dot_predict__pb2.TimeStampReq.SerializeToString,
-            proto_dot_predict__pb2.PredictResponse.FromString,
+            predict__pb2.TimeStampReq.SerializeToString,
+            predict__pb2.PredictResponse.FromString,
             options,
             channel_credentials,
             insecure,
