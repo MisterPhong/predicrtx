@@ -1,64 +1,41 @@
-from datetime import datetime
 import grpc
 from concurrent import futures
 import time
-from pymongo import MongoClient
-from model.aiload import CryptoPricePredictor
-import predict_pb2_grpc
 import predict_pb2
+import predict_pb2_grpc
 
-class PredictService(predict_pb2_grpc.PredictServiceServicer):
-    def __init__(self):
-        self.api_key = "ZIIJYaRgR9WyJaKxq7zVehOtkfomjyX29NwNLWLlBgE3ikw5jtkMxVQD0IgewUxQ"
-        self.api_secret = " 7JmVNUuzOSyjzDnzGsewBIszScuj47sf1w7MRNDUaRj8pE49gAX4fsgP9RlDCi6S"
-        self.path_model = "./model/crypto_price_prediction_model.h5"
-        self.client = MongoClient("mongodb://root:example@localhost:27017/")
-        self.db = self.client["crypto_predictions"]
-        self.collection = self.db["crypto_predict"]
-        self.crypto_predictor = CryptoPricePredictor(self.model_path, self.api_key, self.api_secret)
-
+class PredictServiceServicer(predict_pb2_grpc.PredictServiceServicer):
     def predict(self, request, context):
-        coin_symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'XRPUSDT',
-                        'DOTUSDT', 'SOLUSDT', 'DOGEUSDT', 'LTCUSDT', 'LINKUSDT',
-                        'MATICUSDT', 'UNIUSDT', 'ICPUSDT', 'VETUSDT', 'XLMUSDT',
-                        'FILUSDT', 'TRXUSDT', 'AAVEUSDT', 'EOSUSDT', 'THETAUSDT']
-        # Example: Fetch and predict prices for the given symbols
-        predictions = self.crypto_predictor.fetch_and_predict(coin_symbols)
-        # Add code to save predictions to MongoDB if needed
-        print("Hello")
-        return predict_pb2.PredictResponse(predict=predictions)
-
+        return predict_pb2.Empty()  # implement this method
     
     def deleteall(self, request, context):
-        self.collection.delete_many({})
-        return predict_pb2.Empty()
+        return predict_pb2.Empty()  # implement this method
     
     def update(self, request, context):
-        # Implement update logic if needed
-        return predict_pb2.Empty()
+        return predict_pb2.Empty()  # implement this method
     
     def plot(self, request, context):
-        predictions = []
-        for doc in self.collection.find():
-            timestamp = int(doc["Date"].timestamp()) if isinstance(doc["Date"], datetime.datetime) else doc["Date"]
-            prediction = predict_pb2.Predict(
-                symbol=doc["Symbol"],
-                date=timestamp,
-                current_price=doc["Current Price"],
-                predicted_price=doc["Predicted Price"]
-            )
-            predictions.append(prediction)
-        return predict_pb2.PredictResponse(predict=predictions)
+        response = predict_pb2.PredictResponse()
+        # Add some dummy data for demonstration
+        response.predict.add(symbol="AAPL", date=1625155200, current_price=145.09, predicted_price=148.30)
+        return response
     
     def getData(self, request, context):
-        predictions = []
-        for doc in self.collection.find({"Date": request.timeStamp}):
-            prediction = predict_pb2.Predict(
-                symbol=doc["Symbol"],
-                date=int(doc["Date"].timestamp()) if isinstance(doc["Date"], datetime.datetime) else doc["Date"],
-                current_price=doc["Current Price"],
-                predicted_price=doc["Predicted Price"]
-            )
-            predictions.append(prediction)
-        return predict_pb2.PredictResponse(predict=predictions)
+        response = predict_pb2.PredictResponse()
+        # Add some dummy data for demonstration
+        response.predict.add(symbol="GOOG", date=1625241600, current_price=2500.00, predicted_price=2550.00)
+        return response
 
+def serve():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    predict_pb2_grpc.add_PredictServiceServicer_to_server(PredictServiceServicer(), server)
+    server.add_insecure_port('[::]:50051')
+    server.start()
+    try:
+        while True:
+            time.sleep(86400)
+    except KeyboardInterrupt:
+        server.stop(0)
+
+if __name__ == '__main__':
+    serve()
