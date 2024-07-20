@@ -63,31 +63,16 @@ class CryptoPricePredictor:
             current_time = datetime.utcnow()
 
             result = {
-                'Symbol': symbol,
-                'Date': next_day,
-                'Time': next_day.strftime('%H:%M:%S'),
-                'Current Price': current_price,
-                'Predicted Price': predicted_price,
-                'Actual Price': actual_price,
-                'createdAt': current_time,
-                'updatedAt': current_time
+                'symbol': symbol,
+                'date': next_day,
+                'time': next_day.strftime('%H:%M:%S'),
+                'current_price': current_price,
+                'predicted_price': int(predicted_price),
+                'actual_price': actual_price,
+                'created_at': current_time,
+                'updated_at': current_time
             }
 
             results.append(result)
         return results
 
-# if __name__ == "__main__":
-#     api_key = 'dhxyexgq56p8qfXIXdkL40DOTfpopgBysz8IEbvxJfuqksbDphNubGS8ydMFJTAI'
-#     api_secret = 'nquFquj6eKLmvgWJ4Er6SlFYFte8b0auIKfFmKUH0A7Fh6Mg7FGKb97PPgZggXnO'
-#     model_path = 'crypto_price_prediction_model.h5'
-    
-#     coin_symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'XRPUSDT',
-#                     'DOTUSDT', 'SOLUSDT', 'DOGEUSDT', 'LTCUSDT', 'LINKUSDT',
-#                     'MATICUSDT', 'UNIUSDT', 'ICPUSDT', 'VETUSDT', 'XLMUSDT',
-#                     'FILUSDT', 'TRXUSDT', 'AAVEUSDT', 'EOSUSDT', 'THETAUSDT']
-    
-#     predictor = CryptoPricePredictor(model_path, api_key, api_secret)
-#     results = predictor.fetch_and_predict(coin_symbols)
-    
-#     for result in results:
-#         print(result)
