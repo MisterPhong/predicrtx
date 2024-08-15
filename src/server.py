@@ -1,117 +1,155 @@
+import json
 import grpc
 from concurrent import futures
-import time
-
+from datetime import datetime, timedelta
 from pymongo import MongoClient
+import redis
+from src.config.redis import RedisService
 from src.config.connectDb import connect_to_mongodb
 from src.model.aiload import CryptoPricePredictor
 import predict_pb2
 import predict_pb2_grpc
+import os
 
 class PredictServiceServicer(predict_pb2_grpc.PredictServiceServicer):
     def __init__(self):
-        self.api_key = "ZIIJYaRgR9WyJaKxq7zVehOtkfomjyX29NwNLWLlBgE3ikw5jtkMxVQD0IgewUxQ"
-        self.api_secret = " 7JmVNUuzOSyjzDnzGsewBIszScuj47sf1w7MRNDUaRj8pE49gAX4fsgP9RlDCi6S"
+        self.api_key = (os.getenv("API_KEY"))
+        self.api_secret = (os.getenv("SECRET_KEY"))
         self.model_path = './src/model/crypto_price_prediction_model.h5'
-        # self.client = MongoClient("mongodb://root:example@localhost:27017/")
-        # self.db = self.client["crypto_predictions"]
-        # self.collection = self.db["crypto_predict"]
         self.crypto_predictor = CryptoPricePredictor(self.model_path, self.api_key, self.api_secret)
         self.db = connect_to_mongodb()
-        
+        self.redisService = RedisService()
 
     def predict(self, request, context):
-        coin_symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'XRPUSDT',
-                        'DOTUSDT', 'SOLUSDT', 'DOGEUSDT', 'LTCUSDT', 'LINKUSDT',
-                        'MATICUSDT', 'UNIUSDT', 'ICPUSDT', 'VETUSDT', 'XLMUSDT',
-                        'FILUSDT', 'TRXUSDT', 'AAVEUSDT', 'EOSUSDT', 'THETAUSDT']
-      
-        predictions = self.crypto_predictor.fetch_and_predict(coin_symbols)
-        # Add code to save predictions to MongoDB if needed
-        collection = self.db["aipredict"]
-      
-        collection.insert_many(predictions)
+        try:
+            coin_symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'XRPUSDT',
+                            'DOTUSDT', 'SOLUSDT', 'DOGEUSDT', 'LTCUSDT', 'LINKUSDT']
+            
+            # Fetch predictions
+            predictions = self.crypto_predictor.fetch_and_predict(coin_symbols)
+            
+            # Debugging: Print predictions
+            print(f"Predictions received: {predictions}")
 
-        return predict_pb2.Empty()  # implement this method
-    
+            # Check if predictions is None or not a list
+            if predictions is None:
+                raise ValueError("Predictions returned by fetch_and_predict are None")
+            if not isinstance(predictions, list):
+                raise ValueError(f"Predictions should be a list, got {type(predictions)}")
+
+            # Debugging: Check each prediction
+            for prediction in predictions:
+                if not isinstance(prediction, dict):
+                    raise ValueError(f"Invalid prediction format: {prediction}")
+            
+            # Save predictions to MongoDB
+            collection = self.db["aipredict"]
+            collection.insert_many(predictions)
+            # self.redisService.setKey("testredis", json.dumps(predictions))
+            
+            return predict_pb2.Empty()
+        except Exception as e:
+            # Print exception details for debugging
+            print(f"Exception occurred: {e}")
+            context.set_details(f"Internal server error: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            return predict_pb2.Empty()
+
     def deleteall(self, request, context):
-        ### delete where วันที่
-        return predict_pb2.Empty()  # implement this method
-    
+        try:
+            # คูณค่าที่ได้รับด้วย 1000 เพื่อแปลงกลับเป็น milliseconds
+            timestamp_in_ms = request.timeStamp * 1000
+
+            # แปลง timestamp เป็น datetime object
+            dt_obj = datetime.fromtimestamp(timestamp_in_ms / 1000)
+            date_only = dt_obj.date()
+            start_of_day = datetime.combine(date_only, datetime.min.time())
+            end_of_day = datetime.combine(date_only, datetime.max.time())
+
+            # ลบข้อมูลใน MongoDB ที่ตรงกับช่วงเวลานั้น
+            result = self.db["aipredict"].delete_many({
+                "created_at": {"$gte": start_of_day, "$lt": end_of_day}
+            })
+            print(f"Deleted {result.deleted_count} documents.")
+            return predict_pb2.Empty()
+        except Exception as e:
+            print(f"Exception occurred during deleteall: {e}")
+            context.set_details(f"Internal server error: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            return predict_pb2.Empty()
+
+
     def update(self, request, context):
-        ### upadate where เมื่อวาน
-        return predict_pb2.Empty()  # implement this method
-    
+        try:
+            dt_obj = datetime.fromtimestamp(request.timeStamp)
+            date_only = dt_obj.date()
+            start_of_day = datetime.combine(date_only, datetime.min.time())
+            end_of_day = datetime.combine(date_only, datetime.max.time())
+            documents = self.db["aipredict"].find({
+                "date": {"$gte": start_of_day, "$lt": end_of_day}
+            })
+            for doc in documents:
+                self.db["aipredict"].update_one(
+                    {"_id": doc["_id"]},
+                    {"$set": {"actual_price": doc.get("current_price", 0.0), "updated_at": datetime.utcnow()}}
+                )
+            return predict_pb2.Empty()
+        except Exception as e:
+            print(f"Exception occurred during update: {e}")
+            context.set_details(f"Internal server error: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            return predict_pb2.Empty()
+        
     def plot(self, request, context):
-        response = predict_pb2.PredictResponse()
-        # Find All
-        response.predict.add(symbol="AAPL", date=1625155200, current_price=145.09, predicted_price=148.30)
-        return response
-    
+        try:
+            response = predict_pb2.PredictResponse()
+            for doc in self.db["aipredict"].find():
+                response.predict.add(
+                    symbol=doc.get("symbol", ""),
+                    date=int(doc["date"].timestamp()) if isinstance(doc.get("date"), datetime) else doc.get("date"),
+                    current_price=doc.get("current_price", 0.0),
+                    predicted_price=doc.get("predicted_price", 0.0)
+                )
+            return response
+        except Exception as e:
+            print(f"Exception occurred during plot: {e}")
+            context.set_details(f"Internal server error: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            return predict_pb2.PredictResponse()
+
     def getData(self, request, context):
-        response = predict_pb2.PredictResponse()
-        # Q ry where today
-        response.predict.add(symbol="GOOG", date=1625241600, current_price=2500.00, predicted_price=2550.00)
-        return response
+        try:
+            today = datetime.utcnow().date()
+            start_of_day = datetime.combine(today, datetime.min.time())
+            end_of_day = datetime.combine(today, datetime.max.time())
+            documents = self.db["aipredict"].find({
+                "created_at": {"$gte": start_of_day, "$lt": end_of_day},
+                
+            })
+            print("Retrieved documents for symbol 'BTC':")
+            response = predict_pb2.PredictResponse()
+            for doc in documents:
+                print(doc)
+                response.predict.add(
+                    symbol=doc.get("symbol", ""),
+                    date=int(doc["date"].timestamp()) if isinstance(doc.get("date"), datetime) else doc.get("date"),
+                    current_price=doc.get("current_price", 0.0),
+                    predicted_price=doc.get("predicted_price", 0.0)
+                )
+            return response
+        except Exception as e:
+            print(f"Exception occurred during getData: {e}")
+            context.set_details(f"Internal server error: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            return predict_pb2.PredictResponse()
 
-# from datetime import datetime
-# from pymongo import MongoClient
-# from src.model.aiload import CryptoPricePredictor
-# import predict_pb2
-# import predict_pb2_grpc
+# def serve():
+#     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+#     predict_pb2_grpc.add_PredictServiceServicer_to_server(PredictServiceServicer(), server)
+#     server.add_insecure_port('[::]:50051')
+#     print("Starting gRPC server on port 50051...")
+#     server.start()
+#     server.wait_for_termination()
 
-# class PredictServiceServicer(predict_pb2_grpc.PredictServiceServicer):
-#     def __init__(self):
-#         self.api_key = "ZIIJYaRgR9WyJaKxq7zVehOtkfomjyX29NwNLWLlBgE3ikw5jtkMxVQD0IgewUxQ"
-#         self.api_secret = " 7JmVNUuzOSyjzDnzGsewBIszScuj47sf1w7MRNDUaRj8pE49gAX4fsgP9RlDCi6S"
-#         self.model_path = './src/model/crypto_price_prediction_model.h5'
-#         self.client = MongoClient("mongodb://root:example@localhost:27017/")
-#         self.db = self.client["crypto_predictions"]
-#         self.collection = self.db["crypto_predict"]
-#         self.crypto_predictor = CryptoPricePredictor(self.model_path, self.api_key, self.api_secret)
-
-
-#     def predict(self, request, context):
-#         coin_symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'XRPUSDT',
-#                         'DOTUSDT', 'SOLUSDT', 'DOGEUSDT', 'LTCUSDT', 'LINKUSDT',
-#                         'MATICUSDT', 'UNIUSDT', 'ICPUSDT', 'VETUSDT', 'XLMUSDT',
-#                         'FILUSDT', 'TRXUSDT', 'AAVEUSDT', 'EOSUSDT', 'THETAUSDT']
-#         # Example: Fetch and predict prices for the given symbols
-#         predictions = self.crypto_predictor.fetch_and_predict(coin_symbols)
-#         # Add code to save predictions to MongoDB if needed
-#         print("Hello")
-#         return predict_pb2.PredictResponse(predict=predictions)
-
-    
-#     def deleteall(self, request, context):
-#         self.collection.delete_many({})
-#         return predict_pb2.Empty()
-    
-#     def update(self, request, context):
-#         # Implement update logic if needed
-#         return predict_pb2.Empty()
-    
-#     def plot(self, request, context):
-#         predictions = []
-#         for doc in self.collection.find():
-#             timestamp = int(doc["Date"].timestamp()) if isinstance(doc["Date"], datetime.datetime) else doc["Date"]
-#             prediction = predict_pb2.Predict(
-#                 symbol=doc["Symbol"],
-#                 date=timestamp,
-#                 current_price=doc["Current Price"],
-#                 predicted_price=doc["Predicted Price"]
-#             )
-#             predictions.append(prediction)
-#         return predict_pb2.PredictResponse(predict=predictions)
-    
-#     def getData(self, request, context):
-#         predictions = []
-#         for doc in self.collection.find({"Date": request.timeStamp}):
-#             prediction = predict_pb2.Predict(
-#                 symbol=doc["Symbol"],
-#                 date=int(doc["Date"].timestamp()) if isinstance(doc["Date"], datetime.datetime) else doc["Date"],
-#                 current_price=doc["Current Price"],
-#                 predicted_price=doc["Predicted Price"]
-#             )
-#             predictions.append(prediction)
-#         return predict_pb2.PredictResponse(predict=predictions)
+# if __name__ == '__main__':
+#     serve()

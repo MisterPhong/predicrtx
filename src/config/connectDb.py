@@ -4,7 +4,7 @@ import os
 def connect_to_mongodb():
     try:
         # Create a MongoClient to the running mongod instance
-        client = MongoClient("mongodb://root:example@localhost:27017/zookeeper?authSource=admin")
+        client = MongoClient(os.getenv("MONGO_URL"))
         
         # Access the specified database
         db = client["symbols_predict"]
