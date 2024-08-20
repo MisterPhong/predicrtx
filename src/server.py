@@ -99,9 +99,16 @@ class PredictServiceServicer(predict_pb2_grpc.PredictServiceServicer) :
             if document:
                 updated_symbols = []
                 for symbol_data in document['symbols']:
-                    # อัปเดต actual_price ด้วยราคาทำนายจากเมื่อวาน (predicted_price)
-                    symbol_data['actual_price'] = symbol_data["predicted_price"]
-                    updated_symbols.append(symbol_data)
+                    # ดึงราคาจริงจาก exchange สำหรับ symbol นั้นในช่วงวันที่เมื่อวาน
+                    ticker = self.exchange.fetch_ohlcv(symbol_data['symbol'], '1d', since=int(yesterday_at_7am.timestamp() * 1000), limit=1)
+                    
+                    # ตรวจสอบว่ามีข้อมูลที่ดึงมาหรือไม่
+                    if ticker and len(ticker) > 0:
+                        close_price = ticker[0][4]  # ราคาปิดของเมื่อวานจาก OHLCV
+
+                        # อัปเดต actual_price ด้วยราคาปิดของเมื่อวาน
+                        symbol_data['actual_price'] = close_price
+                        updated_symbols.append(symbol_data)
 
                 # อัปเดตเอกสารใน MongoDB ด้วยข้อมูลใหม่
                 self.db["aipredict"].find_one_and_update(
@@ -121,6 +128,7 @@ class PredictServiceServicer(predict_pb2_grpc.PredictServiceServicer) :
             context.set_details(f"Internal server error: {e}")
             context.set_code(grpc.StatusCode.INTERNAL)
             return predict_pb2.PredictResponse(statusCode="500", message=f"Internal server error: {e}")
+
 
 
     def getData(self, request, context):
