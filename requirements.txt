@@ -4,5 +4,8 @@ python-binance==1.0.19
 tensorflow==2.15.0
 scikit-learn==1.4.1.post1
 grpcio==1.65.1
-grpcio-tools==1.65.1
-protobuf==5.27.2
+grpcio-tools
+protobuf
+pymongo
+redis
+python-dotenv

@@ -51,7 +51,7 @@ class PredictServiceStub(object):
                 _registered_method=True)
         self.update = channel.unary_unary(
                 '/predict.PredictService/update',
-                request_serializer=predict__pb2.TimeStampReq.SerializeToString,
+                request_serializer=predict__pb2.Empty.SerializeToString,
                 response_deserializer=predict__pb2.Empty.FromString,
                 _registered_method=True)
         self.plot = channel.unary_unary(
@@ -114,7 +114,7 @@ def add_PredictServiceServicer_to_server(servicer, server):
             ),
             'update': grpc.unary_unary_rpc_method_handler(
                     servicer.update,
-                    request_deserializer=predict__pb2.TimeStampReq.FromString,
+                    request_deserializer=predict__pb2.Empty.FromString,
                     response_serializer=predict__pb2.Empty.SerializeToString,
             ),
             'plot': grpc.unary_unary_rpc_method_handler(
@@ -207,7 +207,7 @@ class PredictService(object):
             request,
             target,
             '/predict.PredictService/update',
-            predict__pb2.TimeStampReq.SerializeToString,
+            predict__pb2.Empty.SerializeToString,
             predict__pb2.Empty.FromString,
             options,
             channel_credentials,

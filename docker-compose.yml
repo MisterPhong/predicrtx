@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 services:
   mongodb:
@@ -12,5 +12,31 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  redis:
+    image: redis:latest
+    ports:
+      - '6379:6379'
+    restart: always
+
+  predict-service:
+    image: lindermand/predict-service:0.9
+    # build:
+    #   context: .
+    #   dockerfile: ./Dockerfile
+    command: python main.py
+    environment:
+      MONGO_URL: mongodb://root:example@mongodb:27017/zookeeper?authSource=admin
+      HOST_REDIS: redis
+      PORT_REDIS: 6379
+      PORT: 50051
+      API_KEY: ZIIJYaRgR9WyJaKxq7zVehOtkfomjyX29NwNLWLlBgE3ikw5jtkMxVQD0IgewUxQ
+      SECRET_KEY: 7JmVNUuzOSyjzDnzGsewBIszScuj47sf1w7MRNDUaRj8pE49gAX4fsgP9RlDCi6S
+    depends_on:
+      - mongodb
+      - redis
+    ports:
+      - "50055:50051"
+
 volumes:
   mongo_data:
+    driver: local

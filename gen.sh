@@ -1,3 +1,5 @@
 #! /bin/bash
 
-py -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. ./proto/predict.proto
+# py -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. predict.proto
+
+python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. predict.proto
