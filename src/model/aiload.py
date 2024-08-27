@@ -33,7 +33,7 @@ class CryptoPricePredictor:
         data['price_ema'] = data['price'].ewm(span=ema_period, adjust=False).mean()
         return data[['timestamp', 'price', 'price_ema']]
 
-    def predict_price(self, data, time_step=30):
+    def predict_price(self, data, time_step=90):
         prediction_data = data[['price', 'price_ema']]
         scaled_data = self.scaler.fit_transform(prediction_data)
         self.price_scaler.fit(prediction_data[['price']])
@@ -56,18 +56,20 @@ class CryptoPricePredictor:
         }
 
         for symbol in coin_symbols:
-            crypto_data = self.get_crypto_data(symbol, interval='1d', limit=365)
+            crypto_data = self.get_crypto_data(symbol, interval='1d', limit=90)
             crypto_data = self.preprocess_data(crypto_data, ema_period=20)
             predicted_price = self.predict_price(crypto_data)
-        
+
+            # กำหนดจุดขาดทุนที่ 10% จากราคาที่พยากรณ์ไว้
+            stop_loss_price = predicted_price * 0.9
+
             result = {
                 'symbol': symbol,
                 'predicted_price': float(predicted_price),
+                'stop_loss_price': float(stop_loss_price),  # เพิ่ม stop loss price
             }
 
             # Append the result to the symbols array in the payload
             payload['symbols'].append(result)
 
         return payload
-
-

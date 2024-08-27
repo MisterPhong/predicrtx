@@ -16,7 +16,8 @@ class PredictServiceServicer(predict_pb2_grpc.PredictServiceServicer) :
     def __init__(self):
         self.api_key = (os.getenv("API_KEY"))
         self.api_secret = (os.getenv("SECRET_KEY"))
-        self.model_path = './src/model/crypto_price_prediction_model.h5'
+        # self.model_path = './src/model/crypto_price_prediction_model.h5'
+        self.model_path = './src/model/crypto_price_predictor_modelx.h5'
         self.crypto_predictor = CryptoPricePredictor(self.model_path, self.api_key, self.api_secret)
         self.db = connect_to_mongodb()
         self.redisService = RedisService()
@@ -32,26 +33,13 @@ class PredictServiceServicer(predict_pb2_grpc.PredictServiceServicer) :
             
             # Debugging: Print predictions
             print(f"Predictions received: {predictions}")
-
-            # # Check if predictions is None or not a list
-            # if predictions is None:
-            #     raise ValueError("Predictions returned by fetch_and_predict are None")
-            # if not isinstance(predictions, list):
-            #     raise ValueError(f"Predictions should be a list, got {type(predictions)}")
-
-            # # Debugging: Check each prediction
-            # for prediction in predictions:
-            #     if not isinstance(prediction, dict):
-            #         raise ValueError(f"Invalid prediction format: {prediction}")
             
             # Save predictions to MongoDB
             collection = self.db["aipredict"]
             collection.insert_one(predictions)
-            # self.redisService.setKey("testredis", json.dumps(predictions))
             
             return predict_pb2.Empty()
         except Exception as e:
-            # Print exception details for debugging
             print(f"Exception occurred: {e}")
             context.set_details(f"Internal server error: {e}")
             context.set_code(grpc.StatusCode.INTERNAL)
@@ -151,7 +139,7 @@ class PredictServiceServicer(predict_pb2_grpc.PredictServiceServicer) :
                         response.symbols.add(
                             symbol=symbol_data.get("symbol", ""),
                             predicted_price=symbol_data.get("predicted_price", 0.0),
-                            # actual_price=symbol_data.get("actual_price", 0.0)  # Ensure this line is included
+                            actual_price=symbol_data.get("actual_price", 0.0)  # Ensure this line is included
                         )
                 except Exception as e:
                     print(f"Error processing document: {e}")
@@ -168,27 +156,3 @@ class PredictServiceServicer(predict_pb2_grpc.PredictServiceServicer) :
             context.set_details(f"Internal server error: {e}")
             context.set_code(grpc.StatusCode.INTERNAL)
             return predict_pb2.PredictResponse(statusCode="500", message=f"Internal server error: {e}")
-
-            # today = datetime.utcnow().date()
-            # start_of_day = datetime.combine(today, datetime.min.time())
-            # end_of_day = datetime.combine(today, datetime.max.time())
-            # documents = self.db["aipredict"].find({
-            #     "created_at": {"$gte": start_of_day, "$lt": end_of_day},
-                
-            # })
-            # print("Retrieved documents for symbol 'BTC':")
-            # response = predict_pb2.PredictResponse()
-            # for doc in documents:
-            #     print(doc)
-            #     response.predict.add(
-            #         symbol=doc.get("symbol", ""),
-            #         date=int(doc["date"].timestamp()) if isinstance(doc.get("date"), datetime) else doc.get("date"),
-            #         current_price=doc.get("current_price", 0.0),
-            #         predicted_price=doc.get("predicted_price", 0.0)
-            #     )
-            # return response
-        # except Exception as e:
-        #     print(f"Exception occurred during getData: {e}")
-        #     context.set_details(f"Internal server error: {e}")
-        #     context.set_code(grpc.StatusCode.INTERNAL)
-        #     return predict_pb2.PredictResponse()

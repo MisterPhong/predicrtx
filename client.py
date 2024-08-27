@@ -8,18 +8,18 @@ def run():
         stub = predict_pb2_grpc.PredictServiceStub(channel)
         
                # Call predict method
-        # try:
-        #     response = stub.predict(predict_pb2.Empty())
-        #     print("Predict response: ", response)
-        # except grpc.RpcError as e:
-        #     print(f"gRPC error in predict: {e.code()} - {e.details()}")
-
-        # #update method
         try:
-            response = stub.update(predict_pb2.TimeStampReq())
-            print("Update response: ", response)
+            response = stub.predict(predict_pb2.Empty())
+            print("Predict response: ", response)
         except grpc.RpcError as e:
             print(f"gRPC error in predict: {e.code()} - {e.details()}")
+
+        # #update method
+        # try:
+        #     response = stub.update(predict_pb2.TimeStampReq())
+        #     print("Update response: ", response)
+        # except grpc.RpcError as e:
+        #     print(f"gRPC error in predict: {e.code()} - {e.details()}")
        
 
         # Call plot method
