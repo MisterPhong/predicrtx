@@ -19,7 +19,7 @@ services:
     restart: always
 
   predict-service:
-    image: lindermand/predict-service:0.9
+    image: lindermand/predict-service:1.3
     # build:
     #   context: .
     #   dockerfile: ./Dockerfile

@@ -9,3 +9,4 @@ protobuf
 pymongo
 redis
 python-dotenv
+ccxt

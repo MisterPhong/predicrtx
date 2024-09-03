@@ -16,8 +16,8 @@ class PredictServiceServicer(predict_pb2_grpc.PredictServiceServicer) :
     def __init__(self):
         self.api_key = (os.getenv("API_KEY"))
         self.api_secret = (os.getenv("SECRET_KEY"))
-        # self.model_path = './src/model/crypto_price_prediction_model.h5'
-        self.model_path = './src/model/crypto_price_predictor_modelx.h5'
+        self.model_path = './src/model/crypto_price_prediction_model.h5'
+        # self.model_path = './src/model/crypto_price_predictor_modelx.h5'
         self.crypto_predictor = CryptoPricePredictor(self.model_path, self.api_key, self.api_secret)
         self.db = connect_to_mongodb()
         self.redisService = RedisService()

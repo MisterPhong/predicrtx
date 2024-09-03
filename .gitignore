@@ -1,3 +1,6 @@
 .venv
 env
 __pycache__
+src/model/aitrain.py
+aiload.bak
+test.py

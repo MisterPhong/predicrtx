@@ -33,7 +33,7 @@ class CryptoPricePredictor:
         data['price_ema'] = data['price'].ewm(span=ema_period, adjust=False).mean()
         return data[['timestamp', 'price', 'price_ema']]
 
-    def predict_price(self, data, time_step=90):
+    def predict_price(self, data, time_step=30):
         prediction_data = data[['price', 'price_ema']]
         scaled_data = self.scaler.fit_transform(prediction_data)
         self.price_scaler.fit(prediction_data[['price']])
@@ -42,8 +42,13 @@ class CryptoPricePredictor:
         X_future = np.expand_dims(last_30_days_scaled, axis=0)
 
         predictions = self.model.predict(X_future)
-        predicted_price = self.price_scaler.inverse_transform(predictions)
-        return predicted_price.flatten()[0]
+        predicted_price = self.price_scaler.inverse_transform(predictions).flatten()[0]
+
+                 # Apply a larger divergence factor
+        divergence_factor = np.random.uniform(0.98, 1.02)  # Change range to control divergence
+        adjusted_predicted_price = predicted_price * divergence_factor
+
+        return adjusted_predicted_price
 
     def fetch_and_predict(self, coin_symbols):
         tomorrow_morning = datetime.combine(date.today() + timedelta(days=1), datetime.min.time()).replace(hour=7).strftime('%Y-%m-%d %H:%M:%S')
@@ -51,25 +56,25 @@ class CryptoPricePredictor:
         payload = {
             "date": tomorrow_morning,
             "symbols": [],
-            'created_at': date.today().strftime('%Y-%m-%d'),  # Convert to string
+            'created_at': date.today().strftime('%Y-%m-%d'),
             'delete_at': None
         }
 
         for symbol in coin_symbols:
-            crypto_data = self.get_crypto_data(symbol, interval='1d', limit=90)
-            crypto_data = self.preprocess_data(crypto_data, ema_period=20)
+            crypto_data = self.get_crypto_data(symbol, interval='1d', limit=30)
+            crypto_data = self.preprocess_data(crypto_data, ema_period=15)
             predicted_price = self.predict_price(crypto_data)
+            current_price = crypto_data['price'].iloc[-1]
 
-            # กำหนดจุดขาดทุนที่ 10% จากราคาที่พยากรณ์ไว้
-            stop_loss_price = predicted_price * 0.9
+            # Adjust stop loss based on predicted price relative to current price
+            stop_loss_price = current_price * 0.98
 
             result = {
                 'symbol': symbol,
                 'predicted_price': float(predicted_price),
-                'stop_loss_price': float(stop_loss_price),  # เพิ่ม stop loss price
+                'stop_loss_price': float(stop_loss_price),
             }
 
-            # Append the result to the symbols array in the payload
             payload['symbols'].append(result)
 
         return payload
