@@ -69,10 +69,17 @@ class CryptoPricePredictor:
             # Adjust stop loss based on predicted price relative to current price
             stop_loss_price = current_price * 0.98
 
+            # Determine position (short or long)
+            if predicted_price > current_price:
+                position = 'Long'
+            else:
+                position = 'Short'
+
             result = {
                 'symbol': symbol,
                 'predicted_price': float(predicted_price),
                 'stop_loss_price': float(stop_loss_price),
+                'position': position  # Add the position (short or long)
             }
 
             payload['symbols'].append(result)
