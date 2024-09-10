@@ -65,11 +65,12 @@ class CryptoPricePredictor:
             crypto_data = self.preprocess_data(crypto_data, ema_period=15)
             predicted_price = self.predict_price(crypto_data)
             current_price = crypto_data['price'].iloc[-1]
+            
 
             # Adjust stop loss based on predicted price relative to current price
             stop_loss_price = current_price * 0.98
 
-            # Determine position (short or long)
+            # # Determine position (short or long)
             if predicted_price > current_price:
                 position = 'Long'
             else:

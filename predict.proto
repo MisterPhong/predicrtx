@@ -18,6 +18,7 @@ message Predict {
     optional float predicted_price = 3;
     optional int64 date = 4;
     optional int64 stop_loss_price = 5;
+    optional string position = 6;
 }
 
 message PredictResponse {

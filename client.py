@@ -8,11 +8,11 @@ def run():
         stub = predict_pb2_grpc.PredictServiceStub(channel)
         
                # Call predict method
-        try:
-            response = stub.predict(predict_pb2.Empty())
-            print("Predict response: ", response)
-        except grpc.RpcError as e:
-            print(f"gRPC error in predict: {e.code()} - {e.details()}")
+        # try:
+        #     response = stub.predict(predict_pb2.Empty())
+        #     print("Predict response: ", response)
+        # except grpc.RpcError as e:
+        #     print(f"gRPC error in predict: {e.code()} - {e.details()}")
 
         # #update method
         # try:
