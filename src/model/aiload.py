@@ -49,6 +49,30 @@ class CryptoPricePredictor:
         adjusted_predicted_price = predicted_price * divergence_factor
 
         return adjusted_predicted_price
+    def predict_7_day_average(self, data, time_step=30):
+        """Predict cryptocurrency prices for the next 7 days and return the average."""
+        prediction_data = data[['price', 'price_ema']]
+        scaled_data = self.scaler.fit_transform(prediction_data)
+        self.price_scaler.fit(prediction_data[['price']])
+
+        last_30_days_scaled = scaled_data[-time_step:]
+        X_future = np.expand_dims(last_30_days_scaled, axis=0)
+
+        # Predict for the next 7 days
+        predictions = []
+        for _ in range(7):
+            predicted_price = self.model.predict(X_future)
+            predicted_price_unscaled = self.price_scaler.inverse_transform(predicted_price).flatten()[0]
+            predictions.append(predicted_price_unscaled)
+
+            # Append the predicted price back to the data for future predictions
+            next_data_point = np.append(predicted_price, last_30_days_scaled[-1][1])
+            last_30_days_scaled = np.vstack([last_30_days_scaled[1:], next_data_point])
+            X_future = np.expand_dims(last_30_days_scaled, axis=0)
+
+        # Compute the average of the 7-day predictions
+        average_prediction = np.mean(predictions)
+        return average_prediction
 
     def fetch_and_predict(self, coin_symbols):
         tomorrow_morning = datetime.combine(date.today() + timedelta(days=1), datetime.min.time()).replace(hour=7).strftime('%Y-%m-%d %H:%M:%S')
@@ -63,14 +87,17 @@ class CryptoPricePredictor:
         for symbol in coin_symbols:
             crypto_data = self.get_crypto_data(symbol, interval='1d', limit=30)
             crypto_data = self.preprocess_data(crypto_data, ema_period=15)
-            predicted_price = self.predict_price(crypto_data)
-            current_price = crypto_data['price'].iloc[-1]
-            
 
-            # Adjust stop loss based on predicted price relative to current price
+            # Original single-day prediction
+            predicted_price = self.predict_price(crypto_data)
+
+            # New 7-day average prediction
+            avg_7_day_prediction = self.predict_7_day_average(crypto_data)
+
+            current_price = crypto_data['price'].iloc[-1]
             stop_loss_price = current_price * 0.98
 
-            # # Determine position (short or long)
+            # Determine position (short or long)
             if predicted_price > current_price:
                 position = 'Long'
             else:
@@ -79,8 +106,9 @@ class CryptoPricePredictor:
             result = {
                 'symbol': symbol,
                 'predicted_price': float(predicted_price),
+                'avg_7_day_prediction': float(avg_7_day_prediction),  # Added 7-day average prediction
                 'stop_loss_price': float(stop_loss_price),
-                'position': position  # Add the position (short or long)
+                'position': position
             }
 
             payload['symbols'].append(result)

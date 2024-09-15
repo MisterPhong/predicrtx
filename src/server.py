@@ -139,8 +139,9 @@ class PredictServiceServicer(predict_pb2_grpc.PredictServiceServicer) :
                         response.symbols.add(
                             symbol=symbol_data.get("symbol", ""),
                             predicted_price=symbol_data.get("predicted_price", 0.0),
-                            actual_price=symbol_data.get("actual_price", 0.0),  # Ensure this line is included
-                            position=symbol_data.get("position")
+                            # actual_price=symbol_data.get("actual_price", 0.0),  # Ensure this line is included
+                            position=symbol_data.get("position"),
+                            stop_loss_price=symbol_data.get("stop_loss_price",0.0),
                         )
                 except Exception as e:
                     print(f"Error processing document: {e}")
