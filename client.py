@@ -15,11 +15,11 @@ def run():
             print(f"gRPC error in predict: {e.code()} - {e.details()}")
 
         # #update method
-        # try:
-        #     response = stub.update(predict_pb2.TimeStampReq())
-        #     print("Update response: ", response)
-        # except grpc.RpcError as e:
-        #     print(f"gRPC error in predict: {e.code()} - {e.details()}")
+        try:
+            response = stub.update(predict_pb2.Empty())
+            print("Update response: ", response)
+        except grpc.RpcError as e:
+            print(f"gRPC error in update: {e.code()} - {e.details()}")
        
 
         # Call plot method

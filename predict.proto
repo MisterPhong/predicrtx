@@ -19,6 +19,7 @@ message Predict {
     optional int64 date = 4;
     optional float stop_loss_price = 5;
     optional string position = 6;
+    optional float avg_7_day_prediction = 7;
 }
 
 message PredictResponse {
